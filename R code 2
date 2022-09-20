@@ -1,0 +1,346 @@
+cat_data <- read.csv("~/Documents/ball 17-20/twelve pitcher-data.csv", row.names=1)
+real_ori <- read.csv("~/Documents/ball 17-20/twelve pitcher-realdata-with-kmclusters.csv", row.names=1)[,-c(1:2)]
+
+
+tmp2=real_ori[which(cat_data$aX==1 & cat_data$aZ==2),]
+tmp=tmp2[which(gp==5),]
+table(tmp$cluster8,tmp$pitcherName)
+tmp2$cluster8 %<>% as.factor()
+names(newd)[22]="Season"
+df=newd
+
+resu2 %<>% as.data.frame()
+#resu2[,c(15,18)]=tmp3[,c(15,18)]
+
+resu2[,c(19,22)]=tmp2[,c(19,22)]
+colnames(resu2)=colnames(tmp2)
+resu2=resu2[,-c(2,14)]
+
+km=kmeans(df[,c(2,3)],5,iter.max=30)
+kmc = km$cluster
+
+resu2$Y =kmc
+
+
+resu2  %>%
+  unite("Y", pfxX,pfxZ)->real
+real  %<>%
+  unite("ax_az", aX,aZ)
+
+table(Pitcher=resu2$pitcherName ,Y =resu2$Y)
+
+#newd2=real[,-c(11)]
+keepname = names(table(real$ax_az))
+saveleep<-list()
+
+for(iii in 1:length(keepname)){
+  dff =real |> filter(ax_az == keepname[1]) 
+  dff %<>% separate(ax_az,into = c( "aX", "aZ"),sep="_") ###
+  dff$aX %<>% as.integer() 
+  dff$aZ %<>% as.integer() 
+  
+  #real=resu2 ###
+  real =cat_data |> filter(aX== 1 & aZ==2) 
+  resu2  %>%
+    unite("Y", pfxX,pfxZ)->real
+  real=resu2
+  vname = names(real)[-c(19)] ####
+  
+  k=1
+  plat_n=choose(length(vname),k) #
+  featureplat=combn(vname,k) 
+  #Get CE
+  go_2=function(i){
+    real %>%
+      unite("all1", featureplat[1,i])->df2
+    df2$all1=df2$all1 %>% as.factor() %>% as.numeric()
+    CE =condentropy(real$pitcherName,df2$all1, method = "emp") #H(Y|Feature)
+    return(CE)
+  }
+  #go_2(1)
+  
+  want<- matrix(0,plat_n,1)
+  for(i in 1: plat_n){
+    want[i,]= go_2(i)}
+  feat_name <-c()
+  for(i in 1: plat_n){
+    feat_name[i]=paste(featureplat[1,i], sep="_")
+  }
+  rownames(want)=feat_name
+  colnames(want)="CE"
+  want1 = want
+
+k=2
+plat_n=choose(length(vname),k) #12
+featureplat=combn(vname,k) #
+#Get CE
+go_2=function(i){
+  real %>%
+    unite("all1", featureplat[1,i],featureplat[2,i])->df2
+  df2$all1=df2$all1 %>% as.factor() %>% as.numeric()
+  CE =condentropy(real$Y,df2$all1, method = "emp") #H(Y|Feature)
+  return(CE)
+}
+#go_2(1)
+
+want<- matrix(0,plat_n,1)
+for(i in 1: plat_n){
+  want[i,]= go_2(i)}
+feat_name <-c()
+for(i in 1: plat_n){
+  feat_name[i]=paste(featureplat[1,i],featureplat[2,i], sep="_")
+}
+rownames(want)=feat_name
+colnames(want)="CE"
+want2 =want
+#write.csv(want,"2feature-CE.csv")
+
+k=3
+plat_n=choose(length(vname),k) #12
+featureplat=combn(vname,k) #
+#Get CE
+go_2=function(i){
+  real %>%
+    unite("all1", featureplat[1,i],featureplat[2,i],featureplat[3,i])->df2
+  df2$all1=df2$all1 %>% as.factor() %>% as.numeric()
+  CE =condentropy(real$Y,df2$all1, method = "emp") #H(Y|Feature)
+  return(CE)
+}
+#go_2(1)
+
+want<- matrix(0,plat_n,1)
+for(i in 1: plat_n){
+  want[i,]= go_2(i)}
+feat_name <-c()
+for(i in 1: plat_n){
+  feat_name[i]=paste(featureplat[1,i],featureplat[2,i],featureplat[3,i], sep="_")
+}
+rownames(want)=feat_name
+colnames(want)="CE"
+want3 =want
+
+
+
+data1 <- want1
+data <- want2
+
+temp  <- strsplit(rownames(data1), "_")
+temp2 = matrix(unlist(temp), ncol=length(temp[[1]]), byrow=TRUE) #
+
+temptemp  <- strsplit(rownames(data), "_")
+temptemp2 = matrix(unlist(temptemp), ncol=length(temptemp[[1]]), byrow=TRUE) #
+index<-list()
+for(i in 1:nrow(data)){
+  index[[i]]= which(temp2[,1] %in% c(temptemp2[i,]) )} # #
+resu<-c()
+for(i in 1:nrow(data)){
+  resu[i] =  min(data1[index[[i]],1])-data[i,1]##3
+}
+temp_save1 = cbind(data,CEdropped = resu)
+colnames(temp_save1)=c("CE","CE dropped")
+
+data1 <- want2
+data <- want3
+
+temp  <- strsplit(rownames(data1), "_")
+temp2 = matrix(unlist(temp), ncol=length(temp[[1]]), byrow=TRUE) #
+
+temptemp  <- strsplit(rownames(data), "_")
+temptemp2 = matrix(unlist(temptemp), ncol=length(temptemp[[1]]), byrow=TRUE) #
+index<-list()
+for(i in 1:nrow(data)){
+  index[[i]]= which(temp2[,1] %in% c(temptemp2[i,])  & temp2[,2] %in% c(temptemp2[i,]) )} #
+
+resu<-c()
+for(i in 1:nrow(data)){
+  resu[i] =  min(data1[index[[i]],1])-data[i,1]
+}
+temp_save2 = cbind(data,CEdropped = resu)
+colnames(temp_save2)=c("CE","CE dropped")
+
+
+
+####
+data1 <- want1
+ey=entropy(real$Y)
+ee=ey-as.numeric(data1[,1])
+keep = qpcR:::cbind.na(rownames(want1),data1[,1],ee,
+                       rownames(want2),temp_save1,
+                       rownames(want3),temp_save2)#,
+                      # rownames(want4),temp_save3)#,
+
+colnames(keep) = c("1Feature","CE","CE dropped","2Feature","CE","CE dropped",
+                   "3Feature","CE","CE dropped")#,"4Feature","CE","CE dropped")#,
+saveleep[[iii]]=keep
+
+}
+
+
+write.csv(keep,"twelve pitcher YispfxXpfxZ-aX5-CE.csv",na="")
+write.csv(resu,"twelve pitcher-data.csv",na="")
+
+library(plotly)
+
+plot_ly(data = tmp2, x = ~pfXx, y = ~pfXz, z=~spinDirection, color = ~pitcherName)
+##
+k=4
+plat_n=choose(length(vname),k) #12
+featureplat=combn(vname,k) #
+#Get CE
+go_2=function(i){
+  real %>%
+    unite("all1", featureplat[1,i],featureplat[2,i],featureplat[3,i],featureplat[4,i])->df2
+  df2$all1=df2$all1 %>% as.factor() %>% as.numeric()
+  CE =condentropy( real$Y,df2$all1, method = "emp") #H(Y|Feature)
+  return(CE)
+}
+#go_2(1)
+
+want<- matrix(0,plat_n,1)
+for(i in 1: plat_n){
+  want[i,]= go_2(i)}
+feat_name <-c()
+for(i in 1: plat_n){
+  feat_name[i]=paste(featureplat[1,i],featureplat[2,i],
+                     featureplat[3,i],featureplat[4,i],sep="_")
+}
+rownames(want)=feat_name
+colnames(want)="CE"
+want4 =want
+
+data1 <- want3
+data <- want4
+
+temp  <- strsplit(rownames(data1), "_")
+temp2 = matrix(unlist(temp), ncol=length(temp[[1]]), byrow=TRUE) #
+
+temptemp  <- strsplit(rownames(data), "_")
+temptemp2 = matrix(unlist(temptemp), ncol=length(temptemp[[1]]), byrow=TRUE) #
+index<-list()
+for(i in 1:nrow(data)){
+  index[[i]]= which(temp2[,1] %in% c(temptemp2[i,])  & temp2[,2] %in% c(temptemp2[i,]) 
+                    & temp2[,3] %in% c(temptemp2[i,]) )} #
+resu<-c()
+for(i in 1:nrow(data)){
+  resu[i] =  min(data1[index[[i]],1])-data[i,1]##3
+}
+
+temp_save3 = cbind(data,CEdropped = resu)
+colnames(temp_save3)=c("CE","CE dropped")  
+
+#####
+
+
+tmp2=real_ori[which(cat_data$aX==2 & cat_data$aZ==4),]
+
+resu2<-matrix(0,nrow(tmp2),22)
+for(ii in c(1:18,20:21)){
+
+  ddata =tmp2[,ii]
+  index=which(ddata <= quantile(ddata, 0.90) &ddata >= quantile(ddata, 0.10))
+  tmpdata=ddata[index]
+  #
+  clus=3
+  group <- as.numeric(cut(tmpdata, clus))
+  
+  GetMinMax <- function(i){
+    summ <- summary( tmpdata[(which(group==i))] )
+    return( summ[c(1,6)] ) }
+  
+  MinMax <- sapply( 1:clus, GetMinMax )
+  #print("double check if the order matched")
+  ( SmalltoLarge <- order( MinMax[1,] ) )
+  #order( MinMax[2,] )
+  
+  temp <- MinMax[1,][ SmalltoLarge ]
+  temp2 <- MinMax[2,][ SmalltoLarge ]
+  
+  limit=rbind(c(summary(ddata[ddata < quantile(ddata, 0.10)])[1],
+                summary(ddata[ddata < quantile(ddata, 0.10)])[6]),
+              cbind(temp,temp2),
+              c(summary(ddata[ddata > quantile(ddata, 0.9)])[1],
+                summary(ddata[ddata > quantile(ddata, 0.9)])[6]))
+  gp<-c()
+  for(i in 1:nrow(limit)){
+    gp[which(ddata>= limit[i,1] & ddata<= limit[i,2])]=i}
+  resu2[,ii]=gp
+}
+
+
+resu2 %<>% as.data.frame()
+resu2[,c(19,22)]=tmp2[,c(19,22)]
+colnames(resu2)=colnames(tmp2)
+resu2=resu2[,-c(2,14,19)]
+
+write.csv(keep,"12 pitcher YispfxXpfxZ-ax4az4-CE.csv",na="")
+library(RColorBrewer)
+library(plotly)
+pal= brewer.pal(12,"Paired")
+pal <- setNames(pal, c("Charlie Morton",  "Chris Archer" ,    "Chris Sale"  ,     "Clayton Kershaw" , "Gerrit Cole" ,  "Jacob deGrom" ,   
+                       "Jon Lester" , "Jose Quintana" , "Justin Verlander", "Matthew Boyd", "Max Scherzer","Patrick Corbin"  ))
+
+tmp2=real_ori[which(cat_data$aX==2 & cat_data$aZ==3 &cat_data$pitcherName=="Chris Archer"),]
+plot_ly(data = tmp2, x = ~x0, y = ~z0, z = ~spinRate, 
+        color = ~pitcherName,size=1,colors = pal)
+
+real_ori[which(cat_data$aX==5 & cat_data$aZ==2),] |> count(pitcherName)
+
+plot_ly(data = tmp2, x = ~aY, y = ~vX0, z = ~x0, 
+        color = ~as.factor(season),size=1)
+real_ori |> count(pitcherName,season)
+
+tmp2=tmp2[-258,] #outlier x0>=4
+
+##
+nodes=data.frame(
+  id=1:22,
+  feature = c("    aY    "  , "    aZ    "  , "  pfxX  "       ,   "  pfxZ   " ,        
+              "   pX   " , "   pZ   "    ,  "  vX0  "      ,     "  vY0 "  ,        
+              "   vZ0   ","     x     " ,  "     y     "  ,  "   x0   "  ,         
+              "    z0    " , "    aX    " , "breakA" , "breakL"  ,
+              "spinR " ,"spinD ", "  pitN  " ,  "strSpd" ,  
+              "endSpd", "season"  ))
+
+#write.csv(nodes,"nodes.csv")
+#CE=ConditionalEntropy
+
+keep=list()
+keep2=list()
+for(i in 1:22){
+  keep[[i]] =  which(CE[i,]<=0.8 & CE[i,]>0) #w=1
+  keep2[[i]] = which(CE[i,]<=0.8  & CE[i,]>0.6) #w=2
+}
+
+to1=unname(c(unlist(keep)))
+n1=lengths(keep)
+from1=c(rep(1,n1[1]),rep(2,n1[2]),rep(3,n1[3]),rep(4,n1[4]),rep(5,n1[5]),
+        rep(6,n1[6]),rep(7,n1[7]),rep(8,n1[8]),rep(9,n1[9]),rep(10,n1[10]),
+        rep(11,n1[11]),rep(12,n1[12]),rep(13,n1[13]),rep(14,n1[14]),rep(15,n1[15]),
+        rep(16,n1[16]),rep(17,n1[17]),rep(18,n1[18]),rep(19,n1[19]),rep(20,n1[20]),
+        rep(21,n1[21]),rep(22,n1[22]))
+
+weight1 = c(rep(1,length(to1)))
+
+to2=unname(c(unlist(keep2)))
+n2=lengths(keep2)
+from2=c(rep(1,n2[1]),rep(2,n2[2]),rep(3,n2[3]),rep(4,n2[4]),rep(5,n2[5]),
+        rep(6,n2[6]),rep(7,n2[7]),rep(8,n2[8]),rep(9,n2[9]),rep(10,n2[10]),
+        rep(11,n2[11]),rep(12,n2[12]),rep(13,n2[13]),rep(14,n2[14]),rep(15,n2[15]),
+        rep(16,n2[16]),rep(17,n2[17]),rep(18,n2[18]),rep(19,n2[19]),rep(20,n2[20]),
+        rep(21,n2[21]),rep(22,n2[22]))
+weight2 = c(rep(2,length(to2)))
+
+links= data.frame(
+  from = c(from1,from2),
+  to = c(to1,to2),
+  weight = c(weight1,weight2)
+)
+
+temp<-c()
+for( i in 1:nrow(links)){
+  temp[i]= CE[links[i,1],links[i,2]]}
+links$temp = temp
+#links$temp2 = 1-links$temp
+#library('igraph')
+net <- graph_from_data_frame(d=links, vertices=nodes, directed=F) 
+net
