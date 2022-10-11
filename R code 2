@@ -93,188 +93,15 @@ for(i in 1: plat_n){
 rownames(want)=feat_name
 colnames(want)="CE"
 want2 =want
-#write.csv(want,"2feature-CE.csv")
-
-k=3
-plat_n=choose(length(vname),k) #12
-featureplat=combn(vname,k) #
-#Get CE
-go_2=function(i){
-  real %>%
-    unite("all1", featureplat[1,i],featureplat[2,i],featureplat[3,i])->df2
-  df2$all1=df2$all1 %>% as.factor() %>% as.numeric()
-  CE =condentropy(real$Y,df2$all1, method = "emp") #H(Y|Feature)
-  return(CE)
-}
-#go_2(1)
-
-want<- matrix(0,plat_n,1)
-for(i in 1: plat_n){
-  want[i,]= go_2(i)}
-feat_name <-c()
-for(i in 1: plat_n){
-  feat_name[i]=paste(featureplat[1,i],featureplat[2,i],featureplat[3,i], sep="_")
-}
-rownames(want)=feat_name
-colnames(want)="CE"
-want3 =want
 
 
-
-data1 <- want1
-data <- want2
-
-temp  <- strsplit(rownames(data1), "_")
-temp2 = matrix(unlist(temp), ncol=length(temp[[1]]), byrow=TRUE) #
-
-temptemp  <- strsplit(rownames(data), "_")
-temptemp2 = matrix(unlist(temptemp), ncol=length(temptemp[[1]]), byrow=TRUE) #
-index<-list()
-for(i in 1:nrow(data)){
-  index[[i]]= which(temp2[,1] %in% c(temptemp2[i,]) )} # #
-resu<-c()
-for(i in 1:nrow(data)){
-  resu[i] =  min(data1[index[[i]],1])-data[i,1]##3
-}
-temp_save1 = cbind(data,CEdropped = resu)
-colnames(temp_save1)=c("CE","CE dropped")
-
-data1 <- want2
-data <- want3
-
-temp  <- strsplit(rownames(data1), "_")
-temp2 = matrix(unlist(temp), ncol=length(temp[[1]]), byrow=TRUE) #
-
-temptemp  <- strsplit(rownames(data), "_")
-temptemp2 = matrix(unlist(temptemp), ncol=length(temptemp[[1]]), byrow=TRUE) #
-index<-list()
-for(i in 1:nrow(data)){
-  index[[i]]= which(temp2[,1] %in% c(temptemp2[i,])  & temp2[,2] %in% c(temptemp2[i,]) )} #
-
-resu<-c()
-for(i in 1:nrow(data)){
-  resu[i] =  min(data1[index[[i]],1])-data[i,1]
-}
-temp_save2 = cbind(data,CEdropped = resu)
-colnames(temp_save2)=c("CE","CE dropped")
-
-
-
-####
-data1 <- want1
-ey=entropy(real$Y)
-ee=ey-as.numeric(data1[,1])
-keep = qpcR:::cbind.na(rownames(want1),data1[,1],ee,
-                       rownames(want2),temp_save1,
-                       rownames(want3),temp_save2)#,
-                      # rownames(want4),temp_save3)#,
-
-colnames(keep) = c("1Feature","CE","CE dropped","2Feature","CE","CE dropped",
-                   "3Feature","CE","CE dropped")#,"4Feature","CE","CE dropped")#,
-saveleep[[iii]]=keep
-
-}
-
-
-write.csv(keep,"twelve pitcher YispfxXpfxZ-aX5-CE.csv",na="")
-write.csv(resu,"twelve pitcher-data.csv",na="")
 
 library(plotly)
 
 plot_ly(data = tmp2, x = ~pfXx, y = ~pfXz, z=~spinDirection, color = ~pitcherName)
-##
-k=4
-plat_n=choose(length(vname),k) #12
-featureplat=combn(vname,k) #
-#Get CE
-go_2=function(i){
-  real %>%
-    unite("all1", featureplat[1,i],featureplat[2,i],featureplat[3,i],featureplat[4,i])->df2
-  df2$all1=df2$all1 %>% as.factor() %>% as.numeric()
-  CE =condentropy( real$Y,df2$all1, method = "emp") #H(Y|Feature)
-  return(CE)
-}
-#go_2(1)
 
-want<- matrix(0,plat_n,1)
-for(i in 1: plat_n){
-  want[i,]= go_2(i)}
-feat_name <-c()
-for(i in 1: plat_n){
-  feat_name[i]=paste(featureplat[1,i],featureplat[2,i],
-                     featureplat[3,i],featureplat[4,i],sep="_")
-}
-rownames(want)=feat_name
-colnames(want)="CE"
-want4 =want
-
-data1 <- want3
-data <- want4
-
-temp  <- strsplit(rownames(data1), "_")
-temp2 = matrix(unlist(temp), ncol=length(temp[[1]]), byrow=TRUE) #
-
-temptemp  <- strsplit(rownames(data), "_")
-temptemp2 = matrix(unlist(temptemp), ncol=length(temptemp[[1]]), byrow=TRUE) #
-index<-list()
-for(i in 1:nrow(data)){
-  index[[i]]= which(temp2[,1] %in% c(temptemp2[i,])  & temp2[,2] %in% c(temptemp2[i,]) 
-                    & temp2[,3] %in% c(temptemp2[i,]) )} #
-resu<-c()
-for(i in 1:nrow(data)){
-  resu[i] =  min(data1[index[[i]],1])-data[i,1]##3
-}
-
-temp_save3 = cbind(data,CEdropped = resu)
-colnames(temp_save3)=c("CE","CE dropped")  
-
-#####
-
-
-tmp2=real_ori[which(cat_data$aX==2 & cat_data$aZ==4),]
-
-resu2<-matrix(0,nrow(tmp2),22)
-for(ii in c(1:18,20:21)){
-
-  ddata =tmp2[,ii]
-  index=which(ddata <= quantile(ddata, 0.90) &ddata >= quantile(ddata, 0.10))
-  tmpdata=ddata[index]
-  #
-  clus=3
-  group <- as.numeric(cut(tmpdata, clus))
-  
-  GetMinMax <- function(i){
-    summ <- summary( tmpdata[(which(group==i))] )
-    return( summ[c(1,6)] ) }
-  
-  MinMax <- sapply( 1:clus, GetMinMax )
-  #print("double check if the order matched")
-  ( SmalltoLarge <- order( MinMax[1,] ) )
-  #order( MinMax[2,] )
-  
-  temp <- MinMax[1,][ SmalltoLarge ]
-  temp2 <- MinMax[2,][ SmalltoLarge ]
-  
-  limit=rbind(c(summary(ddata[ddata < quantile(ddata, 0.10)])[1],
-                summary(ddata[ddata < quantile(ddata, 0.10)])[6]),
-              cbind(temp,temp2),
-              c(summary(ddata[ddata > quantile(ddata, 0.9)])[1],
-                summary(ddata[ddata > quantile(ddata, 0.9)])[6]))
-  gp<-c()
-  for(i in 1:nrow(limit)){
-    gp[which(ddata>= limit[i,1] & ddata<= limit[i,2])]=i}
-  resu2[,ii]=gp
-}
-
-
-resu2 %<>% as.data.frame()
-resu2[,c(19,22)]=tmp2[,c(19,22)]
-colnames(resu2)=colnames(tmp2)
-resu2=resu2[,-c(2,14,19)]
-
-write.csv(keep,"12 pitcher YispfxXpfxZ-ax4az4-CE.csv",na="")
 library(RColorBrewer)
-library(plotly)
+
 pal= brewer.pal(12,"Paired")
 pal <- setNames(pal, c("Charlie Morton",  "Chris Archer" ,    "Chris Sale"  ,     "Clayton Kershaw" , "Gerrit Cole" ,  "Jacob deGrom" ,   
                        "Jon Lester" , "Jose Quintana" , "Justin Verlander", "Matthew Boyd", "Max Scherzer","Patrick Corbin"  ))
@@ -301,8 +128,6 @@ nodes=data.frame(
               "spinR " ,"spinD ", "  pitN  " ,  "strSpd" ,  
               "endSpd", "season"  ))
 
-#write.csv(nodes,"nodes.csv")
-#CE=ConditionalEntropy
 
 keep=list()
 keep2=list()
@@ -340,7 +165,7 @@ temp<-c()
 for( i in 1:nrow(links)){
   temp[i]= CE[links[i,1],links[i,2]]}
 links$temp = temp
-#links$temp2 = 1-links$temp
-#library('igraph')
+
+library('igraph')
 net <- graph_from_data_frame(d=links, vertices=nodes, directed=F) 
 net
