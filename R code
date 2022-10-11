@@ -4,161 +4,6 @@ real <- read.csv("data_recode.csv", row.names=1)
 real$Age = ori$Age
 real$GenHlth = ori$GenHlth
 
-df= real|> filter(GenHlth==5 & Age ==6) |> select(-c(GH_AGE))
-df %<>% unite("shby", HighChol, Smoker, Diabetes)
-saveleep<-list()
-keepname = names(table(df$shby))
-for(iii in 1:length(keepname)){
-dff =df |> filter(shby==keepname[iii]) 
-dff %<>% separate(shby,into = c( "HighChol", "Smoker", "Diabetes"),sep="_") ###
-dff$HighChol %<>% as.integer() 
-dff$Smoker %<>% as.integer() 
-dff$Diabetes %<>% as.integer() 
-vname = names(dff)[-1]
-
-#CE calculate
-k=1
-plat_n=choose(length(vname),k) #
-featureplat=combn(vname,k) 
-#Get CE
-go_2=function(i){
-  dff %>%
-    unite("all1", featureplat[1,i])->df2
-  df2$all1=df2$all1 %>% as.factor() %>% as.numeric()
-  CE =condentropy(dff$HeartDiseaseorAttack,df2$all1, method = "emp") #H(Y|Feature)
-  return(CE)
-}
-#go_2(1)
-
-want<- matrix(0,plat_n,1)
-for(i in 1: plat_n){
-  want[i,]= go_2(i)}
-feat_name <-c()
-for(i in 1: plat_n){
-  feat_name[i]=paste(featureplat[1,i], sep="_")
-}
-rownames(want)=feat_name
-colnames(want)="CE"
-saveleep[[iii]] = want}
-
-saveleep=list.cbind(saveleep)
-
-colnames(saveleep) = keepname
-write.csv(saveleep,"Gen5_Age6-CE.csv")
-#library(rlist)
-k=2
-plat_n=choose(length(vname),k) #12
-featureplat=combn(vname,k) #
-#Get CE
-go_2=function(i){
-  df %>%
-    unite("all1", featureplat[1,i],featureplat[2,i])->df2
-  df2$all1=df2$all1 %>% as.factor() %>% as.numeric()
-  CE =condentropy(df$HeartDiseaseorAttack,df2$all1, method = "emp") #H(Y|Feature)
-  return(CE)
-}
-
-
-want<- matrix(0,plat_n,1)
-for(i in 1: plat_n){
-  want[i,]= go_2(i)}
-feat_name <-c()
-for(i in 1: plat_n){
-  feat_name[i]=paste(featureplat[1,i],featureplat[2,i], sep="_")
-}
-rownames(want)=feat_name
-colnames(want)="CE"
-want2 =want
-#write.csv(want,"2feature-CE.csv")
-
-k=3
-plat_n=choose(length(vname),k) #12
-featureplat=combn(vname,k) #
-#Get CE
-go_2=function(i){
-  df %>%
-    unite("all1", featureplat[1,i],featureplat[2,i],featureplat[3,i])->df2
-  df2$all1=df2$all1 %>% as.factor() %>% as.numeric()
-  CE =condentropy(df$HeartDiseaseorAttack,df2$all1, method = "emp") #H(Y|Feature)
-  return(CE)
-}
-#go_2(1)
-
-want<- matrix(0,plat_n,1)
-for(i in 1: plat_n){
-  want[i,]= go_2(i)}
-feat_name <-c()
-for(i in 1: plat_n){
-  feat_name[i]=paste(featureplat[1,i],featureplat[2,i],featureplat[3,i], sep="_")
-}
-rownames(want)=feat_name
-colnames(want)="CE"
-want3 =want
-
-
-
-data1 <- want1
-data <- want2
-
-temp  <- strsplit(rownames(data1), "_")
-temp2 = matrix(unlist(temp), ncol=length(temp[[1]]), byrow=TRUE) #
-
-temptemp  <- strsplit(rownames(data), "_")
-temptemp2 = matrix(unlist(temptemp), ncol=length(temptemp[[1]]), byrow=TRUE) #
-index<-list()
-for(i in 1:nrow(data)){
-  index[[i]]= which(temp2[,1] %in% c(temptemp2[i,]) )} # #
-resu<-c()
-for(i in 1:nrow(data)){
-  resu[i] =  min(data1[index[[i]],1])-data[i,1]##3
-}
-temp_save1 = cbind(data,CEdropped = resu)
-colnames(temp_save1)=c("CE","CE dropped")
-
-data1 <- want2
-data <- want3
-
-temp  <- strsplit(rownames(data1), "_")
-temp2 = matrix(unlist(temp), ncol=length(temp[[1]]), byrow=TRUE) #
-
-temptemp  <- strsplit(rownames(data), "_")
-temptemp2 = matrix(unlist(temptemp), ncol=length(temptemp[[1]]), byrow=TRUE) #
-index<-list()
-for(i in 1:nrow(data)){
-  index[[i]]= which(temp2[,1] %in% c(temptemp2[i,])  & temp2[,2] %in% c(temptemp2[i,]) )} #
-
-resu<-c()
-for(i in 1:nrow(data)){
-  resu[i] =  min(data1[index[[i]],1])-data[i,1]
-}
-temp_save2 = cbind(data,CEdropped = resu)
-colnames(temp_save2)=c("CE","CE dropped")
-
-####
-data1 <- want1
-ey=entropy(df$HeartDiseaseorAttack)
-ee=ey-as.numeric(data1[,1])
-keep = qpcR:::cbind.na(rownames(want1),data1[,1],ee,
-                       rownames(want2),temp_save1,
-                       rownames(want3),temp_save2)#,
-
-colnames(keep) = c("1Feature","CE","CE dropped","2Feature","CE","CE dropped",
-                   "3Feature","CE","CE dropped")#,"4Feature","CE","CE dropped")#,
-saveleep[[iii]]=keep
-
-}
-
-
-
-for(i in 1:length(keepname)) {
-  #unpack a 3D array
-  mat = saveleep[[i]]
-  form = sprintf('GenHAge_%s.csv', i)
-  write.csv(mat, file = form,na="")
-  
-}
-
-#
 real %<>% separate(GH_AGE,into = c("GenHlth","Age"),sep="_") ###
 real$GenHlth %<>% as.integer() 
 real$Age %<>% as.integer() 
@@ -185,69 +30,6 @@ df$Age %<>% as.integer()
 df$HighBP %<>% as.integer() 
 df$HighChol %<>% as.integer() 
 df$Stroke %<>% as.integer() 
-
-vname = names(df)[-1]
-
-k=1
-plat_n=choose(length(vname),k) #
-featureplat=combn(vname,k) 
-#Get CE
-go_2=function(i){
-  df %>%
-    unite("all1", featureplat[1,i])->df2
-  df2$all1=df2$all1 %>% as.factor() %>% as.numeric()
-  CE =condentropy(df$HeartDiseaseorAttack,df2$all1, method = "emp") #H(Y|Feature)
-  return(CE)
-}
-#go_2(1)
-
-want<- matrix(0,plat_n,1)
-for(i in 1: plat_n){
-  want[i,]= go_2(i)}
-feat_name <-c()
-for(i in 1: plat_n){
-  feat_name[i]=paste(featureplat[1,i], sep="_")
-}
-rownames(want)=feat_name
-colnames(want)=keepname[ii]
-want0[,ii] = want
-}
-colnames(want0)=keepname
-
-df=tmp[tmp$Stroke==1,]
-df %<>% separate(GH_AGE,into = c("GenHlth","Age"),sep="_") ###
-df$GenHlth %<>% as.numeric() 
-df$Age %<>% as.numeric() 
-vname = names(df)[-1]
-
-k=1
-plat_n=choose(length(vname),k) #
-featureplat=combn(vname,k) 
-#Get CE
-go_2=function(i){
-  df %>%
-    unite("all1", featureplat[1,i])->df2
-  df2$all1=df2$all1 %>% as.factor() %>% as.numeric()
-  CE =condentropy(df$HeartDiseaseorAttack,df2$all1, method = "emp") #H(Y|Feature)
-  return(CE)
-}
-#go_2(1)
-
-want<- matrix(0,plat_n,1)
-for(i in 1: plat_n){
-  want[i,]= go_2(i)}
-feat_name <-c()
-for(i in 1: plat_n){
-  feat_name[i]=paste(featureplat[1,i], sep="_")
-}
-rownames(want)=feat_name
-colnames(want)="CE1"
-want1 = want
-
-keep = data.frame(want0,want1)
-write.csv(want0,"#37: BOT w.r.t BP_Ch_St.csv")
-rownames(want0)=feat_name
-
 
 df = data.frame(
   Feature = c("HD","BP","BP","Chol","Chol","BPxChol","BPxChol","BPxChol","BPxChol"),
@@ -376,7 +158,6 @@ ggsave("GenHlth-Age.pdf", p)
 fig5=fig1 + theme(legend.position="right")
 
 
-#
 # Fig4
 odds<-list()
 for(i in 1:13){
@@ -429,9 +210,6 @@ fig5= ggplot(df, aes(x=Age, y=Odds,color = Feature)) +
 
 library(cowplot)
 p=plot_grid(fig1,fig2,fig3,fig4,fig5,nrow=2,labels = c("GenHlth1","GenHlth2","GenHlth3","GenHlth4","GenHlth5"))
-ggsave("GenHlth-Age-CSX.pdf", p)
-
-fig5=fig1 + theme(legend.position="right")
 
 
 #network
@@ -440,8 +218,7 @@ nodes=data.frame(
   feature = c(" X1 "," X2 "," X3 "," X4 "," X5 "," X6 ",
               " X7 "," X8 "," X9 ","X10"," Y  "))
 
-#write.csv(nodes,"nodes.csv")
-#CE=ConditionalEntropy2
+#CE=ConditionalEntropy
 
 keep=list()
 keep2=list()
